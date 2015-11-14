@@ -11,6 +11,9 @@ autoconf
 libtool
 llvm-dev
 libclang-dev
+binutils-dev
+libiberty-dev
+zlib1g-dev
 llvm Git development branch source code - http://llvm.org/git/llvm.git
 
 Steps to install libbeauty:
