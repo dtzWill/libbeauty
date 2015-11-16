@@ -274,7 +274,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 	int rep = 0;
 	int rep_inst = 0;
 	// Wrap the pointer to the Bytes, BytesSize and PC in a MemoryObject.
-	ArrayRef<uint8_t> Bytes_A(Bytes, BytesSize);
+	ArrayRef<uint8_t> Bytes_A(Bytes + PC, BytesSize - PC);
 	//llvm::DecodeAsmMemoryObject MemoryObject2(Bytes, BytesSize, 0);
 
 	debug_print(DEBUG_INPUT_DIS, 1, "DECODE INST\n");
@@ -317,8 +317,10 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			PC++;
 		}
 	}
-
-	S = DisAsm->getInstruction(*Inst, Size, Bytes_A, PC,
+//	S = DisAsm->getInstruction(*Inst, Size, Bytes_A, PC,
+//		/*REMOVE*/ nulls(), nulls());
+//	Latest LLVM messes up with the PC set to anything other than zero 
+	S = DisAsm->getInstruction(*Inst, Size, Bytes_A, 0,
 		/*REMOVE*/ nulls(), nulls());
 	if (rep > 0) {
 		Size++;
