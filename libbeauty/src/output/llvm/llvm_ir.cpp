@@ -797,7 +797,9 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		dstA = GetElementPtrInst::Create(srcA, srcB, buffer, bb[node]);
+		//dstA = GetElementPtrInst::Create(srcA, srcB, buffer, bb[node]);
+		// FIXME: JCD must get GEP working. 
+		dstA = srcA;		
 		value[inst_log1->value3.value_id] = dstA;
 
 		dstA->print(OS1);
@@ -1105,7 +1107,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
 					exit(1);
 				}
-				value[index] = args;
+				value[index] = &*args;
 				tmp = label_to_string(&(labels[index]), buffer, 1023);
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding reg param:%s:value index=0x%x\n", buffer, index);
 				value[index]->setName(buffer);
@@ -1120,7 +1122,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
 					exit(1);
 				}
-				value[index] = args;
+				value[index] = &*args;
 				tmp = label_to_string(&(labels[index]), buffer, 1023);
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding stack param:%s:value index=0x%x\n", buffer, index);
 				value[index]->setName(buffer);

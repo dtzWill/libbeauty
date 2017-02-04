@@ -63,6 +63,7 @@ int DecodeAsmX86_64::setup() {
 //  llvm::InitializeAllAsmParsers();
 //  llvm::InitializeAllDisassemblers();
 
+	const char *TripleName;
 	MCInst *inst = new MCInst;
 	DisInfo = (struct dis_info_s*) calloc (1, sizeof (struct dis_info_s));
 	DisInfo->Inst = inst;
@@ -125,14 +126,15 @@ int DecodeAsmX86_64::setup() {
 		return 1;
 
 	std::unique_ptr<MCSymbolizer> Symbolizer(TheTarget->createMCSymbolizer(
-		TripleName, GetOpInfo, SymbolLookUp, DisInfo, Ctx, RelInfo.release()));
+		TripleName, GetOpInfo, SymbolLookUp, DisInfo, Ctx, std::move(RelInfo)));
+		//TripleName, GetOpInfo, SymbolLookUp, DisInfo, Ctx, RelInfo.release()));
 	DisAsm->setSymbolizer(std::move(Symbolizer));
 	//DisAsm->setupForSymbolicDisassembly(GetOpInfo, SymbolLookUp, DisInfo, Ctx, RelInfo);
 
 	// Set up the instruction printer.
 	int AsmPrinterVariant = MAI->getAssemblerDialect();
-	IP = TheTarget->createMCInstPrinter(AsmPrinterVariant,
-                                                     *MAI, *MII, *MRI, *STI);
+	IP = TheTarget->createMCInstPrinter(Triple(TripleName), AsmPrinterVariant,
+                                                     *MAI, *MII, *MRI);
 	if (!IP)
 		return 1;
 
@@ -344,7 +346,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 	SmallVector<char, 64> InsnStr;
 	InsnStr.empty();
 	raw_svector_ostream OS(InsnStr);
-	OS.flush();
+	//OS.flush();
 	SmallVector<char, 64> RegStr;
 	RegStr.empty();
 	int num_opcodes = MII->getNumOpcodes();
