@@ -4,5 +4,5 @@ You need to define the environmental variable LIBBEAUTY_BASE.
 
 $LLVM_BASE/utils/lit/lit.py -s -v .
 or on ubuntu:
-/usr/lib/llvm-3.6/build/utils/lit/lit.py -s -v .
+/usr/lib/llvm-3.8/build/utils/lit/lit.py -s -v .
 
