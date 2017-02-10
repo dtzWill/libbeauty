@@ -8,7 +8,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/test -O0 -g3 -Wall -fno-rtti -std=c++11
 #bin_PROGRAMS = dis32 dis64 bf
 #noinst_PROGRAMS = dis64 test_id test_id_arm mem test_case
 #noinst_PROGRAMS = dis64 test_id test_case build_reg_table
-noinst_PROGRAMS = dis64 test_id test_case 
+noinst_PROGRAMS = dis64 test_id test_case test_llvm_builder
 #noinst_PROGRAMS = dis64 test_case
 
 #noinst_HEADERS = \
@@ -34,6 +34,9 @@ test_id_SOURCES = \
 test_case_SOURCES = \
 	test_case.cpp
 
+test_llvm_builder_SOURCES = \
+	test_llvm_builder.cpp
+
 #build_reg_table_SOURCES = \
 #	build_reg_table.cpp
 
@@ -57,6 +60,9 @@ dis64_LDADD = -L$(libdir) -L/usr/lib/llvm-3.8/lib -lbeauty_input_bfd -lbeauty_de
 #test_id_LDADD = -L$(libdir) -lbeauty_input_bfd -lbeauty_decoder_amd64 -lz -ldl -lLLVM-3.2 -L/usr/lib/llvm-3.2/lib -lstdc++
 test_id_LDADD = -L$(libdir) -L/usr/lib/llvm-3.8/lib -lbeauty_input_bfd -lbeauty_decoder_llvm_amd64  \
 		-lbeauty_ll_inst_to_rtl -lbeauty_output_cfg -lz -ldl -lLLVM-3.8
+
+test_llvm_builder_LDADD = -L$(libdir) -L/usr/lib/llvm-3.8/lib \
+		-lz -ldl -lLLVM-3.8 -lstdc++
 
 #test_id_LDADD = -L/usr/local/lib -lz -ldl -lLLVMX86AsmParser -lLLVMX86Desc -lLLVMX86Info \
 #		-lLLVMMCDisassembler -lLLVMX86Disassembler -lbeauty_input_bfd \
@@ -82,6 +88,7 @@ test_case_LDADD = -L$(libdir) -L/usr/lib/llvm-3.8/lib -lz -ldl -lLLVM-3.8 -lstdc
 
 dis64_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti $(common_LDFLAGS)
 test_id_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti $(common_LDFLAGS)
+test_llvm_builder_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 #test_id_arm_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 test_case_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 #build_reg_table_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
