@@ -39,7 +39,7 @@ int main(int argc, char**argv) {
 Module* makeLLVMModule() {
  // Module Construction
  char output_filename[512];
- snprintf(output_filename, 500, "test0b.bc");
+ snprintf(output_filename, 500, "test_llvm_builder_output.bc");
 
  Module* mod = new Module(output_filename, getGlobalContext());
  mod->setDataLayout("");
