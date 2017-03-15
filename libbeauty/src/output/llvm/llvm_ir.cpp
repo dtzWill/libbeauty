@@ -798,6 +798,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
 		//dstA = GetElementPtrInst::Create(srcA, srcB, buffer, bb[node]);
+		//         Type *AgTy = cast<PointerType>(I->getType())->getElementType();
+		//         StructType *STy = cast<StructType>(AgTy);
+		//         Value *Idx = GetElementPtrInst::Create(
+                //                        STy, *AI, Idxs, (*AI)->getName() + "." + Twine(i), Call);
+
+		//dstA = GetElementPtrInst::Create(STy, srcA, srcB, buffer, bb[node]);
 		// FIXME: JCD must get GEP working. 
 		dstA = srcA;		
 		value[inst_log1->value3.value_id] = dstA;
