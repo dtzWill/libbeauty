@@ -43,6 +43,15 @@ Module* makeLLVMModule() {
 //  /*isVarArg=*/false);
  
 // PointerType* PointerTy_2 = PointerType::get(PointerTy_1, 0);
+
+// Global Variables
+ GlobalVariable* gvar_ptr_mem = new GlobalVariable(/*Module=*/*module,
+ /*Type=*/PointerTy_1,
+ /*isConstant=*/false,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Initializer=*/0,
+ /*Name=*/"mem");
+ gvar_ptr_mem->setAlignment(8);
  
  
  // Function Declarations
@@ -53,9 +62,19 @@ Module* makeLLVMModule() {
 
  IRBuilder<> *builder = new IRBuilder<>(BasicBlock::Create(C, "label0", test0_func));
  BasicBlock* bb = builder->GetInsertBlock();
- AllocaInst* ptr_5 = builder->CreateAlloca(PointerTy_1);
+// AllocaInst* ptr_5 = builder->CreateAlloca(PointerTy_1);
 // Value *gep_inst = GetElementPtrInst::Create(STy, ptr_fred2, const_int32_3, "gep1", label_4);
  //ret void
+ LoadInst* ptr_5 = builder->CreateLoad(gvar_ptr_mem, "ptr_5");
+  ptr_5->setAlignment(8);
+ Value* ptr_6 = builder->CreateGEP(ptr_5, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
+ LoadInst* ptr_7 = builder->CreateLoad(ptr_6, "ptr_7");
+  ptr_7->setAlignment(8);
+
+//  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
+//   const_int64_3
+//  }, "", label_4);
+
  ReturnInst::Create(C, bb);
 
 #if 0 
