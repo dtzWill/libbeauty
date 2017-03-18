@@ -65,17 +65,25 @@ Module* makeLLVMModule() {
 // AllocaInst* ptr_5 = builder->CreateAlloca(PointerTy_1);
 // Value *gep_inst = GetElementPtrInst::Create(STy, ptr_fred2, const_int32_3, "gep1", label_4);
  //ret void
- LoadInst* ptr_5 = builder->CreateLoad(gvar_ptr_mem, "ptr_5");
-  ptr_5->setAlignment(8);
+// LoadInst* ptr_5 = builder->CreateLoad(gvar_ptr_mem, "ptr_5");
+ Value* ptr_5 = builder->CreateAlignedLoad(gvar_ptr_mem, 8, "ptr_5");
+//  ptr_5->setAlignment(8);
  Value* ptr_6 = builder->CreateGEP(ptr_5, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
- LoadInst* ptr_7 = builder->CreateLoad(ptr_6, "ptr_7");
-  ptr_7->setAlignment(8);
+ Value* ptr_7 = builder->CreateAlignedLoad(ptr_6, 8, "ptr_7");
 
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
 //   const_int64_3
 //  }, "", label_4);
 
- ReturnInst::Create(C, bb);
+ BasicBlock *bb2 = BasicBlock::Create(C, "label1", test0_func);
+ builder->CreateBr(bb2);
+
+ builder->SetInsertPoint(bb2);
+
+// Value* ret = builder->CreateRet(ptr_7);
+ Value* ret = builder->CreateRetVoid();
+
+// ReturnInst::Create(C, bb);
 
 #if 0 
 // Function* func_test0 = module->getFunction("test0");
