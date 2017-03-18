@@ -61,7 +61,7 @@ Module* makeLLVMModule() {
    getOrInsertFunction("test0", Type::getVoidTy(C), NULL));
 
  IRBuilder<> *builder = new IRBuilder<>(BasicBlock::Create(C, "label0", test0_func));
- BasicBlock* bb = builder->GetInsertBlock();
+ BasicBlock* bb0 = builder->GetInsertBlock();
 // AllocaInst* ptr_5 = builder->CreateAlloca(PointerTy_1);
 // Value *gep_inst = GetElementPtrInst::Create(STy, ptr_fred2, const_int32_3, "gep1", label_4);
  //ret void
@@ -74,11 +74,23 @@ Module* makeLLVMModule() {
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
 //   const_int64_3
 //  }, "", label_4);
-
- BasicBlock *bb2 = BasicBlock::Create(C, "label1", test0_func);
- builder->CreateBr(bb2);
-
+ Value* cond1 = builder->CreateICmpEQ(ConstantInt::get(C, APInt(32, 1)), ConstantInt::get(C, APInt(32, 2)), "cond1");
+ BasicBlock *bb1 = BasicBlock::Create(C, "label1", test0_func);
+ BasicBlock *bb2 = BasicBlock::Create(C, "label2", test0_func);
+ BasicBlock *bb3 = BasicBlock::Create(C, "label3", test0_func);
+ builder->CreateCondBr(cond1, bb1, bb2);
+ builder->SetInsertPoint(bb1);
+ Value* ptr_5_1 = builder->CreateGEP(ptr_5, ConstantInt::get(C, APInt(32, 1)), "ptr_5_1");
+ builder->CreateBr(bb3);
  builder->SetInsertPoint(bb2);
+ Value* ptr_5_2 = builder->CreateGEP(ptr_5, ConstantInt::get(C, APInt(32, 2)), "ptr_5_2");
+ builder->CreateBr(bb3);
+
+ builder->SetInsertPoint(bb3);
+ PHINode *phi_0 = builder->CreatePHI(PointerTy_1, 2, "ptr_8");
+ phi_0->addIncoming(ptr_5_1, bb1);
+ phi_0->addIncoming(ptr_5_2, bb2);
+ Value* ptr_10 = phi_0;
 
 // Value* ret = builder->CreateRet(ptr_7);
  Value* ret = builder->CreateRetVoid();
