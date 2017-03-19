@@ -61,21 +61,32 @@ FuncTy_0_args.push_back(PointerTy_1); // Second arg
 //define void @test0()
  Function* test0_func = cast<Function>(module->
    getOrInsertFunction("test0", FuncTy_0));
- Function::arg_iterator AI = test0_func->arg_begin();
- AI->setName("Pointer_1");
- AI++;
- AI->setName("Pointer_2");
-
-
  IRBuilder<> *builder = new IRBuilder<>(BasicBlock::Create(C, "label0", test0_func));
  BasicBlock* bb0 = builder->GetInsertBlock();
+ 
+
+ Function::arg_iterator AI = test0_func->arg_begin();
+ AI->setName("Pointer_1");
+// AllocaInst *Alloca = CreateEntryBlockAlloca(F, Args[Idx]);
+// AllocaInst *Alloca = builder->CreateAlloca(PointerTy_1, 0, "Pointer_1");
+ // Store the initial value into the alloca.
+ Value* ptr_1 = &*AI;
+//builder->CreateStore(AI, Alloca);
+
+ AI++;
+ AI->setName("Pointer_2");
+ Value* ptr_2 = &*AI;
+// Alloca = builder->CreateAlloca(PointerTy_1, 0, "Pointer_2");
+// Value* ptr_2 = builder->CreateStore(&*AI, Alloca);
+
+
 // AllocaInst* ptr_5 = builder->CreateAlloca(PointerTy_1);
 // Value *gep_inst = GetElementPtrInst::Create(STy, ptr_fred2, const_int32_3, "gep1", label_4);
  //ret void
 // LoadInst* ptr_5 = builder->CreateLoad(gvar_ptr_mem, "ptr_5");
  Value* ptr_5 = builder->CreateAlignedLoad(gvar_ptr_mem, 8, "ptr_5");
 //  ptr_5->setAlignment(8);
- Value* ptr_6 = builder->CreateGEP(ptr_5, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
+ Value* ptr_6 = builder->CreateGEP(ptr_1, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
  Value* ptr_7 = builder->CreateAlignedLoad(ptr_6, 8, "ptr_7");
 
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
