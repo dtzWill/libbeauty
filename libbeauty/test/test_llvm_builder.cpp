@@ -2,6 +2,7 @@
 #define __STDC_CONSTANT_MACROS
 
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Verifier.h>
 
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MathExtras.h>
@@ -11,10 +12,36 @@
 
 using namespace llvm;
 
-Module* makeLLVMModule();
+Module* makeLLVMModule(char *output_filename);
 
 int main(int argc, char**argv) {
-  Module* Mod = makeLLVMModule();
+  char *output_filename;
+  char *output_filename2;
+  std::string ErrorInfo;
+  std::error_code error_code;
+
+  output_filename = (char*)calloc(512, 1);
+  snprintf(output_filename, 500, "test_llvm_builder_output.bc");
+  output_filename2 = (char*)calloc(512, 1);
+  snprintf(output_filename2, 500, "test_llvm_builder_error.txt");
+  Module* Mod = makeLLVMModule(output_filename);
+// Verify Module
+  //raw_fd_ostream OS(output_filename, error_code, 0);
+  raw_fd_ostream OS2(output_filename2, error_code, sys::fs::OpenFlags::F_None);
+  if (verifyModule(*Mod, &OS2)) {
+    printf(": Error constructing function!\n");
+    return 1;
+  }
+// Output Module Bitcode to file
+  //raw_fd_ostream OS(output_filename, error_code, 0);
+  raw_fd_ostream OS(output_filename, error_code, sys::fs::OpenFlags::F_None);
+
+  if (error_code) {
+  // *ErrorMessage = strdup(error_code.message().c_str());
+    return 0;
+  }
+  WriteBitcodeToFile(Mod, OS);
+ 
 //  verifyModule(*Mod, PrintMessageAction);
 //  PassManager PM;
 //  PM.add(createPrintModulePass(&outs()));
@@ -23,11 +50,8 @@ int main(int argc, char**argv) {
 }
 
 
-Module* makeLLVMModule() {
+Module* makeLLVMModule(char *output_filename) {
  // Module Construction
- char output_filename[512];
- snprintf(output_filename, 500, "test_llvm_builder_output.bc");
-
  Module* module = new Module(output_filename, getGlobalContext());
  LLVMContext& C = module->getContext();
  module->setDataLayout("");
@@ -38,7 +62,7 @@ Module* makeLLVMModule() {
  
  // Create the first args. Note: Name added later after Function* created.
 FuncTy_0_args.push_back(PointerTy_1); // First arg
-FuncTy_0_args.push_back(PointerTy_1); // Second arg
+FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second arg
  FunctionType* FuncTy_0 = FunctionType::get(
  /*Result=*/IntegerType::get(module->getContext(), 32),
  /*Params=*/FuncTy_0_args,
@@ -74,8 +98,8 @@ FuncTy_0_args.push_back(PointerTy_1); // Second arg
 //builder->CreateStore(AI, Alloca);
 
  AI++;
- AI->setName("Pointer_2");
- Value* ptr_2 = &*AI;
+ AI->setName("Int32_1");
+ Value* int32_1 = &*AI;
 // Alloca = builder->CreateAlloca(PointerTy_1, 0, "Pointer_2");
 // Value* ptr_2 = builder->CreateStore(&*AI, Alloca);
 
@@ -110,8 +134,8 @@ FuncTy_0_args.push_back(PointerTy_1); // Second arg
  phi_0->addIncoming(ptr_5_2, bb2);
  Value* ptr_10 = phi_0;
 
-// Value* ret = builder->CreateRet(ptr_7);
- Value* ret = builder->CreateRetVoid();
+ Value* ret = builder->CreateRet(int32_1);
+// Value* ret = builder->CreateRetVoid();
 
 // ReturnInst::Create(C, bb);
 
@@ -183,16 +207,6 @@ FuncTy_0_args.push_back(PointerTy_1); // Second arg
   // FIXME: JCD must get GEP working. 
   ReturnInst::Create(module->getContext(), int32_15, label_4);
 #endif 
-  std::string ErrorInfo;
-  std::error_code error_code;
-  //raw_fd_ostream OS(output_filename, error_code, 0);
-  raw_fd_ostream OS(output_filename, error_code, sys::fs::OpenFlags::F_None);
-
-  if (error_code) {
-  // *ErrorMessage = strdup(error_code.message().c_str());
-    return 0;
-  }
-  WriteBitcodeToFile(module, OS);
  
  return module;
 }
