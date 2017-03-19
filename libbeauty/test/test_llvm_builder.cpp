@@ -33,14 +33,16 @@ Module* makeLLVMModule() {
  module->setDataLayout("");
  module->setTargetTriple("x86_64-pc-linux-gnu");
  // Type Definitions
-// std::vector<Type*>FuncTy_0_args;
+ std::vector<Type*>FuncTy_0_args;
  PointerType* PointerTy_1 = PointerType::get(IntegerType::get(module->getContext(), 32), 0);
  
-// FuncTy_0_args.push_back(PointerTy_1);
-// FunctionType* FuncTy_0 = FunctionType::get(
-//  /*Result=*/IntegerType::get(module->getContext(), 32),
-//  /*Params=*/FuncTy_0_args,
-//  /*isVarArg=*/false);
+ // Create the first args. Note: Name added later after Function* created.
+FuncTy_0_args.push_back(PointerTy_1); // First arg
+FuncTy_0_args.push_back(PointerTy_1); // Second arg
+ FunctionType* FuncTy_0 = FunctionType::get(
+ /*Result=*/IntegerType::get(module->getContext(), 32),
+ /*Params=*/FuncTy_0_args,
+ /*isVarArg=*/false);
  
 // PointerType* PointerTy_2 = PointerType::get(PointerTy_1, 0);
 
@@ -58,7 +60,12 @@ Module* makeLLVMModule() {
 
 //define void @test0()
  Function* test0_func = cast<Function>(module->
-   getOrInsertFunction("test0", Type::getVoidTy(C), NULL));
+   getOrInsertFunction("test0", FuncTy_0));
+ Function::arg_iterator AI = test0_func->arg_begin();
+ AI->setName("Pointer_1");
+ AI++;
+ AI->setName("Pointer_2");
+
 
  IRBuilder<> *builder = new IRBuilder<>(BasicBlock::Create(C, "label0", test0_func));
  BasicBlock* bb0 = builder->GetInsertBlock();
