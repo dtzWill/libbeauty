@@ -11,14 +11,17 @@
 
 #include <output.h>
 #include <debug_llvm.h>
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/raw_ostream.h"
+
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Verifier.h>
+
+#include <llvm/Support/FormattedStream.h>
+#include <llvm/Support/MathExtras.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Bitcode/ReaderWriter.h>
+
+
 
 #define STORE_DIRECT 0
 
@@ -28,6 +31,7 @@ struct declaration_s {
 	std::vector<Type*>FuncTy_0_args;
 	FunctionType *FT;
 	Function *F;
+	IRBuilder<> *builder;
 };
 
 		CmpInst::Predicate predicate_to_llvm_table[] =  {
@@ -134,6 +138,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 	int n;
 	std::string Buf1;
 	raw_string_ostream OS1(Buf1);
+
+	IRBuilder<> *builder = declaration[0].builder;
 
 	switch (inst_log1->instruction.opcode) {
 	case 1:  // MOV
@@ -626,9 +632,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
-			dstA_load = new LoadInst(srcA, buffer, false, bb[node]);
-			dstA_load->setAlignment(label->size_bits >> 3);
-			dstA = dstA_load;
+			dstA = builder->CreateAlignedLoad(srcA, label->size_bits >> 3, buffer);
+			//dstA_load = new LoadInst(srcA, buffer, false, bb[node]);
+			//dstA_load->setAlignment(label->size_bits >> 3);
+			//dstA = dstA_load;
 
 			dstA->print(OS1);
 			OS1.flush();
@@ -744,8 +751,9 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		sprint_srcA_srcB(OS1, srcA, srcB);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
-		dstA = new StoreInst(srcA, srcB, false, bb[node]);
-		dstA->print(OS1);
+		// FIXME: JCD: Need to cast the stored to be the type of the srcA
+		//dstA = new StoreInst(srcA, srcB, false, bb[node]);
+		//dstA->print(OS1);
 		OS1 << "\n";
 		OS1.flush();
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -797,6 +805,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
+		dstA = builder->CreateGEP(srcA, srcB, buffer);
 		//dstA = GetElementPtrInst::Create(srcA, srcB, buffer, bb[node]);
 		//         Type *AgTy = cast<PointerType>(I->getType())->getElementType();
 		//         StructType *STy = cast<StructType>(AgTy);
@@ -805,7 +814,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 		//dstA = GetElementPtrInst::Create(STy, srcA, srcB, buffer, bb[node]);
 		// FIXME: JCD must get GEP working. 
-		dstA = srcA;		
+		//dstA = srcA;
 		value[inst_log1->value3.value_id] = dstA;
 
 		dstA->print(OS1);
@@ -942,12 +951,12 @@ int LLVM_ir_export::fill_value(struct self_s *self, Value **value, int value_id,
 		} else if (label->size_bits == 64) {
 			value[value_id] = ConstantInt::get(Type::getInt64Ty(Context), label->value);
 		} else {
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM fill_value() failed with size_bits = 0x%lx\n", label->size_bits);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "ERROR: LLVM fill_value() failed with size_bits = 0x%lx\n", label->size_bits);
 			return 1;
 		}
 		return 0;
 	} else {
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM fill_value(): value_id = 0x%x, label->scope = 0x%lx, label->type = 0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "ERROR: LLVM fill_value(): value_id = 0x%x, label->scope = 0x%lx, label->type = 0x%lx\n",
 			value_id,
 			label->scope,
 			label->type);
@@ -1016,7 +1025,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					//std::vector<Type*>FuncTy_0_args;
 					struct label_s *labels_ext = external_entry_points[l].labels;
 					for (m = 0; m < external_entry_points[l].params_reg_ordered_size; m++) {
-						index = external_entry_points[l].params_reg_ordered[m];
+						index = external_entry_points[l].params[m];
 						if (labels_ext[index].lab_pointer > 0) {
 							int size = labels_ext[index].pointer_type_size_bits;
 							debug_print(DEBUG_OUTPUT_LLVM, 1, "Reg Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n", m, index, size);
@@ -1031,6 +1040,7 @@ int LLVM_ir_export::output(struct self_s *self)
 							declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
 						}
 					}
+#if 0
 					for (m = 0; m < external_entry_points[l].params_stack_ordered_size; m++) {
 						index = external_entry_points[l].params_stack_ordered[m];
 						if (index == 3) {
@@ -1050,8 +1060,35 @@ int LLVM_ir_export::output(struct self_s *self)
 							declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
 						}
 					}
-				}
-			}
+#endif
+					// dump names for all arguments.
+					unsigned Idx = 0;
+					for (Idx = 0; Idx < declaration[l].FuncTy_0_args.size(); Idx++) {
+						declaration[l].FuncTy_0_args[Idx]->dump();
+					}
+					if (external_entry_points[l].params_size > 0) {
+						char buffer[1024];
+						for (m = 0; m < external_entry_points[l].params_size; m++) {
+							int label_index;
+							tmp = external_entry_points[l].params[m];
+							label_index = external_entry_points[l].label_redirect[tmp].redirect;
+							printf("Label 0x%x->0x%x:", tmp, label_index);
+							tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
+							label = &external_entry_points[l].labels[label_index];
+							printf("%s/0x%lx,ps=0x%lx, lp=0x%lx\n",
+								buffer,
+								label->size_bits,
+								label->pointer_type_size_bits,
+								label->lab_pointer);
+
+							if (n + 1 < external_entry_points[l].params_size) {
+								tmp = printf("\n");
+							}
+							tmp = printf("\n");
+						}
+					}
+                                }
+                        }
 
 			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 				if ((external_entry_points[l].valid != 0) &&
@@ -1069,7 +1106,20 @@ int LLVM_ir_export::output(struct self_s *self)
 					function_name = external_entry_points[l].name;
 					Function *F =
 						Function::Create(declaration[l].FT, Function::ExternalLinkage, function_name, mod);
+
 					declaration[l].F = F;
+					Function::arg_iterator AI = F->arg_begin();
+					char buffer[1024];
+					for (m = 0; m < external_entry_points[l].params_size; m++) {
+						int label_index;
+						tmp = external_entry_points[l].params[m];
+						label_index = external_entry_points[l].label_redirect[tmp].redirect;
+						tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
+						AI->setName(buffer);
+						value[label_index] = &*AI;
+						AI++;
+					}
+
 					declaration[l].F->print(OS1);
 					debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 					Buf1.clear();
@@ -1104,14 +1154,20 @@ int LLVM_ir_export::output(struct self_s *self)
 
 			function_name = external_entry_points[n].name;
 			snprintf(output_filename, 500, "./llvm/%s.bc", function_name);
-#if 1
+#if 0
+			// Debug params_reg_ordered indexes
+			for (m = 0; m < external_entry_points[n].params_reg_ordered_size; m++) {
+				index = external_entry_points[n].params_reg_ordered[m];
+				printf("external_entry_points[%d].params_reg_ordered[%d] = %d;\n",
+					n, m, index);
+			}
 			Function::arg_iterator args = declaration[n].F->arg_begin();
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "Function: %s()  param_size = 0x%x\n", function_name, external_entry_points[n].params_size);
 			for (m = 0; m < external_entry_points[n].params_reg_ordered_size; m++) {
 				index = external_entry_points[n].params_reg_ordered[m];
 				if (!index) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
-					exit(1);
+					continue;
 				}
 				value[index] = &*args;
 				tmp = label_to_string(&(labels[index]), buffer, 1023);
@@ -1149,7 +1205,10 @@ int LLVM_ir_export::output(struct self_s *self)
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM2: %s\n", node_string.c_str());
 				bb[m] = BasicBlock::Create(Context, node_string, declaration[n].F);
 			}
-
+			IRBuilder<> *builder = new IRBuilder<>(bb[1]);
+			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+				declaration[l].builder = builder;
+			}
 			/* Create the AllocaInst's */
 			/* labels[0] should be empty and is a invalid value to errors can be caught. */
 			for (m = 1; m < labels_size; m++) {
@@ -1161,14 +1220,16 @@ int LLVM_ir_export::output(struct self_s *self)
 					if (labels[m].lab_pointer && labels[m].pointer_type == 2) {
 						size_bits = labels[m].pointer_type_size_bits;
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "Creating alloca for ptr to int label 0x%x, size_bits = 0x%x\n", m, size_bits);
-						AllocaInst* ptr_local = new AllocaInst(IntegerType::get(mod->getContext(), size_bits), buffer, bb[1]);
+						//AllocaInst* ptr_local = new AllocaInst(IntegerType::get(mod->getContext(), size_bits), buffer, bb[1]);
+						AllocaInst* ptr_local = builder->CreateAlloca(IntegerType::get(mod->getContext(), size_bits), nullptr, buffer);
 						ptr_local->setAlignment(size_bits >> 3);
 						value[m] = ptr_local;
 					} else {
 						size_bits = labels[m].pointer_type_size_bits;
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "Creating alloca for ptr to ptr label 0x%x, size_bits = 0x%x\n", m, size_bits);
 						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0);
-						AllocaInst* ptr_local = new AllocaInst(PointerTy_1, buffer, bb[1]);
+						//AllocaInst* ptr_local = new AllocaInst(PointerTy_1, buffer, bb[1]);
+						AllocaInst* ptr_local = builder->CreateAlloca(PointerTy_1, nullptr, buffer);
 						ptr_local->setAlignment(size_bits >> 3);
 						value[m] = ptr_local;
 					}
@@ -1196,22 +1257,29 @@ int LLVM_ir_export::output(struct self_s *self)
 						debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: labels[value_id]: value_id = 0. \n");
 						exit(1);
 					}
+					builder->SetInsertPoint(bb[node]);
 					tmp = label_to_string(&labels[value_id], buffer, 1023);
 					if (labels[value_id].lab_pointer) {
 						size_bits = labels[m].pointer_type_size_bits;
 						/* FIXME:size 8 */
 						if (!size_bits) size_bits = 8;
 						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0);
-						phi_node = PHINode::Create(PointerTy_1,
+						//phi_node = PHINode::Create(PointerTy_1,
+						//	nodes[node].phi[m].phi_node_size,
+						//	buffer, bb[node]);
+						phi_node = builder->CreatePHI(PointerTy_1,
 							nodes[node].phi[m].phi_node_size,
-							buffer, bb[node]);
+							buffer);
 						value[value_id] = phi_node;
 					} else {
 						size_bits = labels[value_id].size_bits;
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM phi base size = 0x%x\n", size_bits);
-						phi_node = PHINode::Create(IntegerType::get(mod->getContext(), size_bits),
+						//phi_node = PHINode::Create(IntegerType::get(mod->getContext(), size_bits),
+						//	nodes[node].phi[m].phi_node_size,
+						//	buffer, bb[node]);
+						phi_node = builder->CreatePHI(IntegerType::get(mod->getContext(), size_bits),
 							nodes[node].phi[m].phi_node_size,
-							buffer, bb[node]);
+							buffer);
 						value[value_id] = phi_node;
 					}
 					value_id1 = nodes[node].phi[m].phi_node[0].value_id;
@@ -1235,7 +1303,7 @@ int LLVM_ir_export::output(struct self_s *self)
 				}
 				LLVM_ir_export::add_node_instructions(self, mod, declaration, value, bb, node, n);
 			}
-
+#if 0
 			for (node = 1; node < nodes_size; node++) {
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM: PHI PHASE 2: node=0x%x\n", node);
 
@@ -1269,13 +1337,20 @@ int LLVM_ir_export::output(struct self_s *self)
 					}
 				}
 			}
+#endif
 			std::string ErrorInfo;
 			std::error_code error_code;
 			raw_fd_ostream OS(output_filename, error_code, llvm::sys::fs::F_None);
+			raw_fd_ostream OS2("llvm_output_errors.txt", error_code, llvm::sys::fs::F_None);
 
 			if (error_code) {
 				// *ErrorMessage = strdup(error_code.message().c_str());
 				return -1;
+			}
+			if (verifyModule(*mod, &OS2)) {
+				printf(": Error constructing function!\n");
+				debug_print(DEBUG_OUTPUT_LLVM, 1, ": Error constructing function!\n");
+				return 1;
 			}
 
 			WriteBitcodeToFile(mod, OS);
