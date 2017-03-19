@@ -1,6 +1,7 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
+#include <iostream>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Verifier.h>
 
@@ -62,7 +63,13 @@ Module* makeLLVMModule(char *output_filename) {
  
  // Create the first args. Note: Name added later after Function* created.
 FuncTy_0_args.push_back(PointerTy_1); // First arg
+//std::cout << FuncTy_0_args[0] << "\n";
+
+
 FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second arg
+//FuncTy_0_args[0]->dump();
+//FuncTy_0_args[1]->dump();
+
  FunctionType* FuncTy_0 = FunctionType::get(
  /*Result=*/IntegerType::get(module->getContext(), 32),
  /*Params=*/FuncTy_0_args,
@@ -96,7 +103,7 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  // Store the initial value into the alloca.
  Value* ptr_1 = &*AI;
 //builder->CreateStore(AI, Alloca);
-
+// AI->dump();
  AI++;
  AI->setName("Int32_1");
  Value* int32_1 = &*AI;
