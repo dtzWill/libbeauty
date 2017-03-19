@@ -96,16 +96,6 @@ char *dis_flags_table[] = { " ", "f" };
 uint64_t inst_log = 1;	/* Pointer to the current free instruction log entry. */
 //struct self_s *self = NULL;
 
-/* debug: 0 = no debug output. >= 1 is more debug output */
-int debug_dis64 = 0;
-int debug_input_bfd = 0;
-int debug_input_dis = 0;
-int debug_exe = 0;
-int debug_analyse = 0;
-int debug_analyse_paths = 0;
-int debug_analyse_phi = 0;
-int debug_output = 0;
-
 struct test_data_s {
 	int	valid;
 	uint8_t bytes[16];
@@ -586,74 +576,16 @@ struct test_data_s test_data[] = {
 
 //#define test_data_no sizeof(test_data) / sizeof(struct test_data_s)
 
-void dbg_print(const char* func, int line, int module, int level, const char *format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	switch (module) {
-	case DEBUG_MAIN:
-		if (level <= debug_dis64) {
-			fprintf(stderr, "DEBUG_MAIN,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_INPUT_BFD:
-		if (level <= debug_input_bfd) {
-			fprintf(stderr, "DEBUG_INPUT_BFD,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_INPUT_DIS:
-		if (level <= debug_input_dis) {
-			fprintf(stderr, "DEBUG_INPUT_DIS,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_EXE:
-		if (level <= debug_exe) {
-			fprintf(stderr, "DEBUG_EXE,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_ANALYSE:
-		if (level <= debug_analyse) {
-			fprintf(stderr, "DEBUG_ANALYSE,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_ANALYSE_PATHS:
-		if (level <= debug_analyse_paths) {
-			fprintf(stderr, "DEBUG_ANALYSE_PATHS,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_ANALYSE_PHI:
-		if (level <= debug_analyse_phi) {
-			fprintf(stderr, "DEBUG_ANALYSE_PHI,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	case DEBUG_OUTPUT:
-		if (level <= debug_output) {
-			fprintf(stderr, "DEBUG_OUTPUT,0x%x %s,%d: ", level, func, line);
-			vfprintf(stderr, format, ap);
-		}
-		break;
-	default:
-		printf("DEBUG Failed: Module 0x%x\n", module);
-		exit(1);
-		break;
-	}
-	va_end(ap);
-}
-
-#if 0
-int disassemble(void *handle_void, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t offset) {
-	int tmp;
-	tmp = disassemble_amd64(handle_void, dis_instructions, base_address, offset);
-	return tmp;
-}
-#endif
+/* debug: 0 = no debug output. >= 1 is more debug output */
+int debug_dis64 = 0;
+int debug_input_bfd = 0;
+int debug_input_dis = 0;
+int debug_exe = 0;
+int debug_analyse = 0;
+int debug_analyse_paths = 0;
+int debug_analyse_phi = 0;
+int debug_output = 0;
+int debug_output_llvm = 0;
 
 void setLogLevel()
 {
@@ -673,7 +605,84 @@ void setLogLevel()
 		debug_analyse_phi = 1;
 	if (getenv("ENABLE_DEBUG_OUTPUT"))
 		debug_output = 1;
+	if (getenv("ENABLE_DEBUG_OUTPUT_LLVM"))
+		debug_output_llvm = 1;
 }
+
+void dbg_print(const char* file, int line, const char* func, int module, int level, const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	switch (module) {
+	case DEBUG_MAIN:
+		if (level <= debug_dis64) {
+			dprintf(STDERR_FILENO, "DEBUG_MAIN,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_INPUT_BFD:
+		if (level <= debug_input_bfd) {
+			dprintf(STDERR_FILENO, "DEBUG_INPUT_BFD,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_INPUT_DIS:
+		if (level <= debug_input_dis) {
+			dprintf(STDERR_FILENO, "DEBUG_INPUT_DIS,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_EXE:
+		if (level <= debug_exe) {
+			dprintf(STDERR_FILENO, "DEBUG_EXE,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_ANALYSE:
+		if (level <= debug_analyse) {
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_ANALYSE_PATHS:
+		if (level <= debug_analyse_paths) {
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PATHS,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_ANALYSE_PHI:
+		if (level <= debug_analyse_phi) {
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PHI,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_OUTPUT:
+		if (level <= debug_output) {
+			dprintf(STDERR_FILENO, "DEBUG_OUTPUT,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_OUTPUT_LLVM:
+		if (level <= debug_output_llvm) {
+			dprintf(STDERR_FILENO, "DEBUG_OUTPUT_LLVM,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	default:
+		printf("DEBUG Failed: Module 0x%x\n", module);
+		exit(1);
+		break;
+	}
+	va_end(ap);
+}
+
+#if 0
+int disassemble(void *handle_void, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t offset) {
+	int tmp;
+	tmp = disassemble_amd64(handle_void, dis_instructions, base_address, offset);
+	return tmp;
+}
+#endif
 
 /* getHexToken()
    Get next valid hexadecimal token from str starting at pos

@@ -43,8 +43,8 @@
 extern "C" {
 #endif /* !defined(__cplusplus) */
 
-extern void dbg_print(const char* func, int line, int module, int level, const char *format, ...) __attribute__((__format__ (printf, 5, 6)));
-#define debug_print(module, level, format, ...) dbg_print(__FUNCTION__, __LINE__, module, level, format, ##__VA_ARGS__)
+extern void dbg_print(const char* file, int line, const char* func, int module, int level, const char *format, ...) __attribute__((__format__ (printf, 6, 7)));
+#define debug_print(module, level, format, ...) dbg_print(__FILE__, __LINE__, __FUNCTION__, module, level, format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
