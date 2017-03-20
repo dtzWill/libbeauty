@@ -60,7 +60,16 @@ Module* makeLLVMModule(char *output_filename) {
  // Type Definitions
  std::vector<Type*>FuncTy_0_args;
  PointerType* PointerTy_1 = PointerType::get(IntegerType::get(module->getContext(), 32), 0);
- 
+ PointerType* PointerTy_2 = PointerType::get(IntegerType::get(module->getContext(), 8), 0);
+ PointerTy_1->dump();
+ PointerTy_2->dump();
+ if (PointerTy_1 == PointerTy_2) {
+	printf("Match\n");
+ }
+// This creates the i8* type
+//PointerType* PointerTy = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+// This creates the i8** type
+//PointerType* PointerPtrTy = PointerType::get(PointerTy, 0); 
  // Create the first args. Note: Name added later after Function* created.
 FuncTy_0_args.push_back(PointerTy_1); // First arg
 //std::cout << FuncTy_0_args[0] << "\n";
