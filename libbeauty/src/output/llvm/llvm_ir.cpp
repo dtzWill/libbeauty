@@ -703,6 +703,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		}
 		break;
 	case 0x26:  // STORE
+		{
+		Value* srcB_store;
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:STORE\n", inst, inst_log1->instruction.opcode);
 //		if (inst_log1->instruction.dstA.index == 0x28) {
 //			/* Skip the 0x28 reg as it is the SP reg */
@@ -732,7 +734,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		}
 		/* Note: The srcB here should be value3 as it is a STORE instruction */
 		/*       But it depends on whether the value3 is a constant or a calculated pointer */
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		value_id = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 		if (value_id) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA value_id 0x%x\n", inst, value_id);
 			if (!value[value_id]) {
@@ -751,13 +753,59 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		sprint_srcA_srcB(OS1, srcA, srcB);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
+		Type* srcA_type = srcA->getType();
+		Type* srcB_type = srcB->getType();
+		uint32_t srcA_width = 99;
+		uint32_t srcB_width = 99;
+		if (srcA_type->isIntegerTy()) {
+			srcA_width = cast<IntegerType>(srcA_type)->getBitWidth();
+		}
+		if (srcA_type->isPointerTy()) {
+			PointerType *PTy = cast<PointerType>(srcA_type);
+			Type *Type1 = PTy->getElementType();
+			if (Type1->isIntegerTy()) {
+				srcA_width = cast<IntegerType>(Type1)->getBitWidth();
+			}
+		}
+		if (srcB_type->isIntegerTy()) {
+			srcB_width = cast<IntegerType>(srcB_type)->getBitWidth();
+		}
+		if (srcB_type->isPointerTy()) {
+			PointerType *PTy = cast<PointerType>(srcB_type);
+			Type *Type1 = PTy->getElementType();
+			if (Type1->isIntegerTy()) {
+				srcB_width = cast<IntegerType>(Type1)->getBitWidth();
+			} else if (Type1->isPointerTy()) {
+				PointerType *PTy = cast<PointerType>(srcB_type);
+				Type *Type1 = PTy->getElementType();
+				if (Type1->isIntegerTy()) {
+					srcB_width = cast<IntegerType>(Type1)->getBitWidth();
+				}
+			}
+		}
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: srcA_width = %d, srcB_width = %d\n", inst, srcA_width, srcB_width);
+		srcA_type->dump();
+		srcB_type->dump();
+		//std::cout << srcB->getName());
+		// If they are == a normal store will not work.
+		if ((srcA_type != srcB_type) &&
+			(srcA_type->isPointerTy()) &&
+			(srcB_type->isPointerTy())) {
+			PointerType *srcB_ptr = PointerType::get(srcA_type, 0);
+			srcB_store = builder->CreateBitCast(srcB, srcB_ptr);
+		} else {
+			srcB_store = srcB;
+		}
+
 		// FIXME: JCD: Need to cast the stored to be the type of the srcA
 		//dstA = new StoreInst(srcA, srcB, false, bb[node]);
-		//dstA->print(OS1);
+		dstA = builder->CreateStore(srcA, srcB_store);
+		dstA->print(OS1);
 		OS1 << "\n";
 		OS1.flush();
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
+		}
 		break;
 	case 0x2F:  // GEP1
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:GEP1\n", inst, inst_log1->instruction.opcode);
@@ -1375,4 +1423,3 @@ extern "C" int llvm_export(struct self_s *self)
 	tmp = LLVM_ir_export_entry(self);
 	return tmp;
 }
-
