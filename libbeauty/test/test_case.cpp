@@ -6,12 +6,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <llvm-3.8/llvm/MC/MCInst.h>
-#include "llvm-3.8/llvm/MC/MCInstrInfo.h"
-#include "llvm-3.8/llvm/Support/Format.h"
-#include "llvm-3.8/llvm/Support/raw_ostream.h"
-#include "llvm-3.8/llvm/Support/TargetRegistry.h"
-#include "llvm-3.8/llvm/Support/TargetSelect.h"
+#include <llvm/MC/MCInst.h>
+#include <llvm/MC/MCInstrInfo.h>
+#include <llvm/Support/Format.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
 
 #define MAX_INPUT_LEN 128
 #define MAX_TEST_DATA 16

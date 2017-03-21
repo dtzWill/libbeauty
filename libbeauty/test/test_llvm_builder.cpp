@@ -4,6 +4,9 @@
 #include <iostream>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+//#include <llvm/Transforms/Scalar/LoopPassManager.h>
 
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MathExtras.h>
@@ -13,19 +16,27 @@
 
 using namespace llvm;
 
-Module* makeLLVMModule(char *output_filename);
+static cl::opt<bool>
+	DebugPM("debug-pass-manager", cl::Hidden,
+		cl::desc("Print pass management debugging information"));
+
+
+
+
+Module* makeLLVMModule(LLVMContext &Context, char *output_filename);
 
 int main(int argc, char**argv) {
   char *output_filename;
   char *output_filename2;
   std::string ErrorInfo;
   std::error_code error_code;
+  LLVMContext Context;
 
   output_filename = (char*)calloc(512, 1);
   snprintf(output_filename, 500, "test_llvm_builder_output.bc");
   output_filename2 = (char*)calloc(512, 1);
   snprintf(output_filename2, 500, "test_llvm_builder_error.txt");
-  Module* Mod = makeLLVMModule(output_filename);
+  Module* Mod = makeLLVMModule(Context, output_filename);
 // Verify Module
   //raw_fd_ostream OS(output_filename, error_code, 0);
   raw_fd_ostream OS2(output_filename2, error_code, sys::fs::OpenFlags::F_None);
@@ -42,7 +53,37 @@ int main(int argc, char**argv) {
     return 0;
   }
   WriteBitcodeToFile(Mod, OS);
- 
+
+  TargetMachine* TM = nullptr;
+  StringRef PassPipeline = "cgscc(function-attrs)";
+//  StringRef PassPipeline = "function(print)";
+  PassBuilder PB(TM);
+
+  LoopAnalysisManager LAM(DebugPM);
+  FunctionAnalysisManager FAM(DebugPM);
+  CGSCCAnalysisManager CGAM(DebugPM);
+  ModuleAnalysisManager MAM(DebugPM);
+
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  ModulePassManager MPM(DebugPM);
+
+	if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
+		DebugPM)) {
+		std::cout << ": unable to parse pass pipeline description. " ;
+		std::cout << PassPipeline.data() ;
+		std::cout << "\n" ;
+		return 1;
+	}
+
+
+  MPM.run(*Mod, MAM);
+
+
 //  verifyModule(*Mod, PrintMessageAction);
 //  PassManager PM;
 //  PM.add(createPrintModulePass(&outs()));
@@ -51,9 +92,9 @@ int main(int argc, char**argv) {
 }
 
 
-Module* makeLLVMModule(char *output_filename) {
+Module* makeLLVMModule(LLVMContext &Context, char *output_filename) {
  // Module Construction
- Module* module = new Module(output_filename, getGlobalContext());
+ Module* module = new Module(output_filename, Context);
  LLVMContext& C = module->getContext();
  module->setDataLayout("");
  module->setTargetTriple("x86_64-pc-linux-gnu");
