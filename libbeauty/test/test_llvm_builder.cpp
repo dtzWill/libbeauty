@@ -55,7 +55,7 @@ int main(int argc, char**argv) {
   WriteBitcodeToFile(Mod, OS);
 
   TargetMachine* TM = nullptr;
-  StringRef PassPipeline = "cgscc(function-attrs)";
+  StringRef PassPipeline = "cgscc(function-attrs),print";
 //  StringRef PassPipeline = "function(print)";
   PassBuilder PB(TM);
 
