@@ -7,6 +7,7 @@ export ENABLE_DEBUG_ANALYSE_PATHS=0
 export ENABLE_DEBUG_ANALYSE_PHI=0
 export ENABLE_DEBUG_OUTPUT=1
 
+mkdir llvm
 echo -n test00:
 if ../../../test/dis64 test0.o 2>&1 | grep -q "END - FINISHED PROCESSING"
 then
