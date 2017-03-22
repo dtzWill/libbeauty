@@ -3,6 +3,7 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
+#include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -14,6 +15,8 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
 
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MathExtras.h>
@@ -26,6 +29,11 @@
 #define STORE_DIRECT 0
 
 using namespace llvm;
+
+
+static cl::opt<bool>
+	DebugPM("debug-pass-manager", cl::Hidden,
+		cl::desc("Print pass management debugging information"));
 
 struct declaration_s {
 	std::vector<Type*>FuncTy_0_args;
@@ -203,7 +211,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		dstA = BinaryOperator::CreateAdd(srcA, srcB, buffer, bb[node]);
+		dstA = builder->CreateAdd(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -270,7 +278,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA_size = 0x%lx, srcB_size = 0x%lx\n", srcA_size, srcB_size);
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		dstA = BinaryOperator::CreateSub(srcA, srcB, buffer, bb[node]);
+		dstA = builder->CreateSub(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -312,7 +320,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		dstA = BinaryOperator::CreateXor(srcA, srcB, buffer, bb[node]);
+		dstA = builder->CreateXor(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -354,7 +362,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		dstA = BinaryOperator::Create(Instruction::Mul, srcA, srcB, buffer, bb[node]);
+		dstA = builder->CreateMul(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -396,7 +404,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		dstA = BinaryOperator::Create(Instruction::Mul, srcA, srcB, buffer, bb[node]);
+		// FIXME: Get IMUL different from MUL
+		dstA = builder->CreateMul(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -406,7 +415,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:JMP node_end = 0x%x\n", inst, inst_log1->instruction.opcode, inst_log1->node_end);
 		if (inst_log1->node_end) {
 			node_true = nodes[node].link_next[0].node;
-			dstA = BranchInst::Create(bb[node_true], bb[node]);
+			//dstA = BranchInst::Create(bb[node_true], bb[node]);
+			dstA = builder->CreateBr(bb[node_true]);
 			sprint_value(OS1, dstA);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 			Buf1.clear();
@@ -452,7 +462,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				(STORE_DIRECT == inst_log1->instruction.srcA.store)) {
 				function_to_call = inst_log1->instruction.srcA.index;
 			}
-			CallInst* call_inst = CallInst::Create(declaration[function_to_call].F, vector_params, buffer, bb[node]);
+			CallInst* call_inst = builder->CreateCall(declaration[function_to_call].F, vector_params, buffer);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: call_inst %p\n", inst, call_inst);
 
 			call_inst->setCallingConv(CallingConv::C);
@@ -481,7 +491,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		sprint_value(OS1, srcA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
-		dstA = ReturnInst::Create(Context, srcA, bb[node]);
+		dstA = builder->CreateRet(srcA);
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
@@ -510,7 +520,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->size_bits = 0x%lx\n", label->size_bits);
-		dstA = new SExtInst(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer, bb[node]);
+		dstA = builder->CreateSExt(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer);
 		value[value_id_dst] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -555,8 +565,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-		//dstA = new ICmpInst(*bb, ICmpInst::ICMP_EQ, srcA, srcB, buffer);
-		dstA = new ICmpInst(*bb[node], predicate_to_llvm_table[inst_log1->instruction.predicate], srcA, srcB, buffer);
+		dstA = builder->CreateICmp(predicate_to_llvm_table[inst_log1->instruction.predicate], srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -583,7 +592,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		//BranchInst::Create(label_7, label_9, int1_11, label_6);
 		node_true = nodes[node].link_next[0].node;
 		node_false = nodes[node].link_next[1].node;
-		dstA = BranchInst::Create(bb[node_true], bb[node_false], srcA, bb[node]);
+		dstA = builder->CreateCondBr(srcA, bb[node_true], bb[node_false], srcA);
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
@@ -682,8 +691,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
-			dstA_load = new LoadInst(srcA, buffer, false, bb[node]);
-			dstA_load->setAlignment(label->size_bits >> 3);
+			dstA = builder->CreateAlignedLoad(srcA, label->size_bits >> 3, buffer);
 			dstA = dstA_load;
 
 			dstA->print(OS1);
@@ -899,7 +907,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->size_bits = 0x%lx\n", label->size_bits);
-		dstA = new TruncInst(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer, bb[node]);
+		dstA = builder->CreateTrunc(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer);
 		value[value_id_dst] = dstA;
 
 		dstA->print(OS1);
@@ -929,7 +937,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->size_bits = 0x%lx\n", label->size_bits);
-		dstA = new ZExtInst(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer, bb[node]);
+		dstA = builder->CreateZExt(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer);
 		value[value_id_dst] = dstA;
 		break;
 
@@ -1163,6 +1171,7 @@ int LLVM_ir_export::output(struct self_s *self)
 						tmp = external_entry_points[l].params[m];
 						label_index = external_entry_points[l].label_redirect[tmp].redirect;
 						tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
+						printf("buffer=%s\n", buffer);
 						AI->setName(buffer);
 						value[label_index] = &*AI;
 						AI++;
@@ -1395,11 +1404,43 @@ int LLVM_ir_export::output(struct self_s *self)
 				// *ErrorMessage = strdup(error_code.message().c_str());
 				return -1;
 			}
+
 			if (verifyModule(*mod, &OS2)) {
 				printf(": Error constructing function!\n");
 				debug_print(DEBUG_OUTPUT_LLVM, 1, ": Error constructing function!\n");
 				return 1;
 			}
+
+
+			TargetMachine* TM = nullptr;
+			StringRef PassPipeline = "module(function(dse),cgscc(function-attrs)),print";
+			//  StringRef PassPipeline = "function(print)";
+			PassBuilder PB(TM);
+
+			LoopAnalysisManager LAM(DebugPM);
+			FunctionAnalysisManager FAM(DebugPM);
+			CGSCCAnalysisManager CGAM(DebugPM);
+			ModuleAnalysisManager MAM(DebugPM);
+
+			PB.registerModuleAnalyses(MAM);
+			PB.registerCGSCCAnalyses(CGAM);
+			PB.registerFunctionAnalyses(FAM);
+			PB.registerLoopAnalyses(LAM);
+			PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+			ModulePassManager MPM(DebugPM);
+
+			if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
+				DebugPM)) {
+				std::cout << ": unable to parse pass pipeline description. " ;
+				std::cout << PassPipeline.data() ;
+				std::cout << "\n" ;
+				return 1;
+			}
+
+
+			MPM.run(*mod, MAM);
+
 
 			WriteBitcodeToFile(mod, OS);
 			delete mod;
