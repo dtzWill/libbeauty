@@ -7,12 +7,12 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define i32* @test17_ll(i32* %var1) #0 {
-  %n = getelementptr i32* @global1, i32 0
+  %n = getelementptr i32, i32* @global1, i32 0
   br label %1
 
 ; <label>:1                                       ; preds = %1
   %n2 = phi i32* [ %n, %0 ], [ %n3, %1 ]
-  %n3 = getelementptr i32* %n2, i32 1
+  %n3 = getelementptr i32, i32* %n2, i32 1
   %2 = icmp slt i32* %n3, %var1
   br i1 %2, label %1, label %3
 

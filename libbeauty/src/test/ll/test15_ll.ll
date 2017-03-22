@@ -9,8 +9,8 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: optsize zeroext
 define i8 @test15_ll() #0 {
-  %a = load i8* @mem8a, align 4
-  %b = load i8* @mem8b, align 4
+  %a = load i8, i8* @mem8a, align 4
+  %b = load i8, i8* @mem8b, align 4
   %c = xor i8 %a, %b
   ret i8 %c
 }

@@ -6,7 +6,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define i32 @test10_ll() #0 {
-  %1 = load volatile i32* @mem1, align 4
+  %1 = load volatile i32, i32* @mem1, align 4
   ret i32 %1
 }
 

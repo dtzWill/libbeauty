@@ -8,8 +8,8 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: nounwind uwtable
 define i32 @test11_ll() #0 {
-  %constant0001 = getelementptr i32* @mem1, i64 0
-  %1 = load volatile i32* %constant0001, align 4
+  %constant0001 = getelementptr i32, i32* @mem1, i64 0
+  %1 = load volatile i32, i32* %constant0001, align 4
   ret i32 %1
 }
 

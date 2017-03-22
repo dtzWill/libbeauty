@@ -8,7 +8,7 @@ define i32 @test13_ll(i32 %var1) #0 {
   %n = alloca i32, align 4
   store i32 %var1, i32* %1, align 4
   store i32 0, i32* %n, align 4
-  %2 = load i32* %1, align 4
+  %2 = load i32, i32* %1, align 4
   ret i32 %2
 }
 
