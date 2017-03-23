@@ -1301,6 +1301,7 @@ int LLVM_ir_export::output(struct self_s *self)
 			for (node = 1; node < nodes_size; node++) {
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM: PHI PHASE 1: node=0x%x\n", node);
 
+				builder->SetInsertPoint(bb[node]);
 				/* Output PHI instructions first */
 				for (m = 0; m < nodes[node].phi_size; m++) {
 					int value_id = nodes[node].phi[m].value_id;
@@ -1314,7 +1315,6 @@ int LLVM_ir_export::output(struct self_s *self)
 						debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: labels[value_id]: value_id = 0. \n");
 						exit(1);
 					}
-					builder->SetInsertPoint(bb[node]);
 					tmp = label_to_string(&labels[value_id], buffer, 1023);
 					if (labels[value_id].lab_pointer) {
 						size_bits = labels[m].pointer_type_size_bits;
@@ -1360,7 +1360,7 @@ int LLVM_ir_export::output(struct self_s *self)
 				}
 				LLVM_ir_export::add_node_instructions(self, mod, declaration, value, bb, node, n);
 			}
-#if 0
+#if 1
 			for (node = 1; node < nodes_size; node++) {
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM: PHI PHASE 2: node=0x%x\n", node);
 
