@@ -15,6 +15,7 @@ binutils-dev
 libiberty-dev
 zlib1g-dev
 llvm Git development branch source code - http://llvm.org/git/llvm.git
+libLLVM-3.9
 
 Steps to install libbeauty:
 --------------------------
