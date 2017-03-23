@@ -592,7 +592,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		//BranchInst::Create(label_7, label_9, int1_11, label_6);
 		node_true = nodes[node].link_next[0].node;
 		node_false = nodes[node].link_next[1].node;
-		dstA = builder->CreateCondBr(srcA, bb[node_true], bb[node_false], srcA);
+		dstA = builder->CreateCondBr(srcA, bb[node_true], bb[node_false]);
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
@@ -692,7 +692,6 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
 			dstA = builder->CreateAlignedLoad(srcA, label->size_bits >> 3, buffer);
-			dstA = dstA_load;
 
 			dstA->print(OS1);
 			OS1.flush();
@@ -1040,6 +1039,7 @@ int LLVM_ir_export::output(struct self_s *self)
 	int index;
 	std::string Buf1;
 	raw_string_ostream OS1(Buf1);
+	StringRef PassPipeline;
 	
 	struct external_entry_point_s *external_entry_points = self->external_entry_points;
 	struct declaration_s *declaration = static_cast <struct declaration_s *> (calloc(EXTERNAL_ENTRY_POINTS_MAX, sizeof (struct declaration_s)));
@@ -1405,16 +1405,7 @@ int LLVM_ir_export::output(struct self_s *self)
 				return -1;
 			}
 
-			if (verifyModule(*mod, &OS2)) {
-				printf(": Error constructing function!\n");
-				debug_print(DEBUG_OUTPUT_LLVM, 1, ": Error constructing function!\n");
-				return 1;
-			}
-
-
 			TargetMachine* TM = nullptr;
-			StringRef PassPipeline = "module(function(dse),cgscc(function-attrs)),print";
-			//  StringRef PassPipeline = "function(print)";
 			PassBuilder PB(TM);
 
 			LoopAnalysisManager LAM(DebugPM);
@@ -1430,6 +1421,25 @@ int LLVM_ir_export::output(struct self_s *self)
 
 			ModulePassManager MPM(DebugPM);
 
+			/* True is is fails */
+			if (verifyModule(*mod, &OS2)) {
+				PassPipeline = "function(print)";
+				if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
+					DebugPM)) {
+					std::cout << ": unable to parse pass pipeline description. " ;
+					std::cout << PassPipeline.data() ;
+					std::cout << "\n" ;
+					return 1;
+				}
+
+				MPM.run(*mod, MAM);
+				printf(": Error verifying module!\n");
+				debug_print(DEBUG_OUTPUT_LLVM, 1, ": Error verifying module!\n");
+				OS2.close();
+				exit(1);
+			}
+
+			PassPipeline = "print,module(function(dse),cgscc(function-attrs)),print";
 			if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
 				DebugPM)) {
 				std::cout << ": unable to parse pass pipeline description. " ;
@@ -1437,7 +1447,6 @@ int LLVM_ir_export::output(struct self_s *self)
 				std::cout << "\n" ;
 				return 1;
 			}
-
 
 			MPM.run(*mod, MAM);
 
