@@ -1080,6 +1080,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					(n == 0)) {
 					//std::vector<Type*>FuncTy_0_args;
 					struct label_s *labels_ext = external_entry_points[l].labels;
+#if 0
 					for (m = 0; m < external_entry_points[l].params_reg_ordered_size; m++) {
 						index = external_entry_points[l].params[m];
 						if (labels_ext[index].lab_pointer > 0) {
@@ -1096,7 +1097,7 @@ int LLVM_ir_export::output(struct self_s *self)
 							declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
 						}
 					}
-#if 0
+
 					for (m = 0; m < external_entry_points[l].params_stack_ordered_size; m++) {
 						index = external_entry_points[l].params_stack_ordered[m];
 						if (index == 3) {
@@ -1117,11 +1118,42 @@ int LLVM_ir_export::output(struct self_s *self)
 						}
 					}
 #endif
+					if (external_entry_points[l].params_size > 0) {
+						char buffer[1024];
+						for (m = 0; m < external_entry_points[l].params_size; m++) {
+							int label_index;
+							tmp = external_entry_points[l].params[m];
+							label_index = external_entry_points[l].label_redirect[tmp].redirect;
+							//if (label_index == 3) {
+							///* EIP or param_stack0000 */
+							//}
+							if (labels_ext[label_index].lab_pointer > 0) {
+								int size = labels_ext[label_index].pointer_type_size_bits;
+								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n",
+									m, label_index, size);
+								if (size < 8) {
+									debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
+									size = 64;
+								}
+								declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size), 0));
+							} else {
+								int size = labels_ext[label_index].size_bits;
+								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%x, size_bits = 0x%x\n",
+									m, label_index, size);
+								declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
+							}
+						}
+					}
+
+
+
 					// dump names for all arguments.
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args LLVM version\n");
 					unsigned Idx = 0;
 					for (Idx = 0; Idx < declaration[l].FuncTy_0_args.size(); Idx++) {
 						declaration[l].FuncTy_0_args[Idx]->dump();
 					}
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args Source version\n");
 					if (external_entry_points[l].params_size > 0) {
 						char buffer[1024];
 						for (m = 0; m < external_entry_points[l].params_size; m++) {
