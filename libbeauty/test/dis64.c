@@ -4443,18 +4443,19 @@ int dump_labels_table(struct self_s *self, char *buffer)
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
-			for (n = 0x1; n < 0x130; n++) {
+			for (n = 0x1; n < 0x500; n++) {
 				struct label_s *label;
 				tmp = external_entry_points[l].label_redirect[n].redirect;
 				label = &(external_entry_points[l].labels[tmp]);
 				if (label->scope) {
 					printf("Label 0x%x->0x%x:", n, tmp);
 					tmp = label_to_string(label, buffer, 1023);
-					printf("%s/0x%lx,ps=0x%lx, lp=0x%lx\n",
+					printf("%s/0x%lx,ps=0x%lx, lp=0x%lx, scope=0x%lx\n",
 						buffer,
 						label->size_bits,
 						label->pointer_type_size_bits,
-						label->lab_pointer);
+						label->lab_pointer,
+						label->scope);
 				}
 			}
 		}
