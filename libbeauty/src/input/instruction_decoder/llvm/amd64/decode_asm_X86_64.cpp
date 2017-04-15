@@ -345,7 +345,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 	debug_print(DEBUG_INPUT_DIS, 1, "opcode_form = 0x%x, num_operands = 0x%x\n", opcode_form, num_operands);
 	MCOperand *Operand;
 	switch (opcode_form) {
-	case 1: // RawFrm
+	case X86II::RawFrm:
 		switch (num_operands) {
 		case 0:
 			ll_inst->srcA.kind = KIND_EMPTY;
@@ -383,7 +383,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 2: // AddRegFrm
+	case X86II::AddRegFrm:
 		switch (num_operands) {
 		case 1:
 			Operand = &Inst->getOperand(0);
@@ -440,7 +440,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 3: // MRMDestReg
+	case X86II::MRMDestReg:
 		switch (num_operands) {
 		case 2:
 			Operand = &Inst->getOperand(0);
@@ -535,7 +535,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 4: //  MRMDestMem 
+	case X86II::MRMDestMem:
 		ll_inst->srcA.kind = KIND_IND_SCALE;
 		Operand = &Inst->getOperand(0);
 		if (Operand->isValid() &&
@@ -621,7 +621,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 		debug_print(DEBUG_INPUT_DIS, 1, "DST0 = SRC0\n");
 		result = 0;
 		break;
-	case 5: // MRMSrcReg
+	case X86II::MRMSrcReg:
 		switch (num_operands) {
 		case 2:
 			Operand = &Inst->getOperand(0);
@@ -723,7 +723,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 6: // MRMSrcMem
+	case X86II::MRMSrcMem:
 		switch (num_operands) {
 		case 6:
 			Operand = &Inst->getOperand(0);
@@ -1020,7 +1020,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 0x0a: // RawFrmDstSrc
+	case X86II::RawFrmDstSrc:
 		switch (num_operands) {
 		case 3:
 			Operand = &Inst->getOperand(0);
@@ -1064,7 +1064,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 		}
 		break;
 
-	case 0x0f: // MRMXm
+	case X86II::MRMXm:
 		switch (num_operands) {
 		case 5:
 			ll_inst->srcA.kind = KIND_IND_SCALE;
@@ -1226,14 +1226,14 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 0x10: // MRM0r
-	case 0x11: // MRM1r
-	case 0x12: // MRM2r
-	case 0x13: // MRM3r
-	case 0x14: // MRM4r
-	case 0x15: // MRM5r
-	case 0x16: // MRM6r
-	case 0x17: // MRM7r
+	case X86II::MRM0r:
+	case X86II::MRM1r:
+	case X86II::MRM2r:
+	case X86II::MRM3r:
+	case X86II::MRM4r:
+	case X86II::MRM5r:
+	case X86II::MRM6r:
+	case X86II::MRM7r:
 		switch (num_operands) {
 		case 1:
 			Operand = &Inst->getOperand(0);
@@ -1359,14 +1359,14 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 			break;
 		}
 		break;
-	case 0x18: // MRM0m
-	case 0x19: // MRM1m
-	case 0x1A: // MRM2m 
-	case 0x1B: // MRM3m 
-	case 0x1C: // MRM4m 
-	case 0x1D: // MRM5m 
-	case 0x1E: // MRM6m 
-	case 0x1F: // MRM7m 
+	case X86II::MRM0m:
+	case X86II::MRM1m:
+	case X86II::MRM2m:
+	case X86II::MRM3m:
+	case X86II::MRM4m:
+	case X86II::MRM5m:
+	case X86II::MRM6m:
+	case X86II::MRM7m:
 		switch (num_operands) {
 		case 5:
 			ll_inst->srcA.kind = KIND_IND_SCALE;
