@@ -576,7 +576,7 @@ namespace X86II {
   /// of the specified instruction.
   inline unsigned getSizeOfImm(uint64_t TSFlags) {
     switch (TSFlags & X86II::ImmMask) {
-    default: llvm_unreachable("Unknown immediate size");
+    default: return 0;
     case X86II::Imm8:
     case X86II::Imm8PCRel:
     case X86II::Imm8Reg:    return 1;
