@@ -13,7 +13,6 @@
 #include <llvm/MC/MCSubtargetInfo.h>
 #include <llvm/Support/Format.h>
 #include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/MemoryObject.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -206,7 +205,7 @@ int DecodeAsmX86_64::get_reg_size_helper(int value, int *reg_index) {
 			return 0;
 		}
 	}
-	outs() << format("ERROR: get_reg_size_helper Unknown reg value = 0x%x:%s\n", value, reg_name);
+	//outs() << format("ERROR: get_reg_size_helper Unknown reg value = 0x%x:%s\n", value, reg_name);
 #if 0
 	for (n = 1; n < 233; n++) {
 		outs() << format("Reg:0x%x\n", n);
@@ -220,29 +219,6 @@ int DecodeAsmX86_64::get_reg_size_helper(int value, int *reg_index) {
 
 	return 1;
 }
-
-
-//
-// The memory object created by LLVMDecodeAsmInstruction().
-//
-class DecodeAsmMemoryObject : public llvm::MemoryObject {
-	uint8_t *Bytes;
-	uint64_t Size;
-	uint64_t BasePC;
-public:
-	DecodeAsmMemoryObject(uint8_t *bytes, uint64_t size, uint64_t basePC) :
-	Bytes(bytes), Size(size), BasePC(basePC) {}
- 
-	uint64_t getBase() const { return BasePC; }
-	uint64_t getExtent() const { return Size; }
-
-	int readByte(uint64_t Addr, uint8_t *Byte) const {
-		if (Addr - BasePC >= Size)
-			return -1;
-		*Byte = Bytes[Addr - BasePC];
-		return 0;
-	}
-};
 
 int llvm::DecodeAsmX86_64::copy_operand(struct operand_low_level_s *src, struct operand_low_level_s *dst) {
 	int n;
@@ -275,9 +251,8 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 	int result = 1;
 	int rep = 0;
 	int rep_inst = 0;
-	// Wrap the pointer to the Bytes, BytesSize and PC in a MemoryObject.
+	// Wrap the pointer to the Bytes, BytesSize and PC in a Bytes Array.
 	ArrayRef<uint8_t> Bytes_A(Bytes + PC, BytesSize - PC);
-	//llvm::DecodeAsmMemoryObject MemoryObject2(Bytes, BytesSize, 0);
 
 	debug_print(DEBUG_INPUT_DIS, 1, "DECODE INST\n");
 	if (PC > BytesSize) {

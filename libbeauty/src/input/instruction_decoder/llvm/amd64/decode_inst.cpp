@@ -23,7 +23,6 @@
 #include <llvm/MC/MCSubtargetInfo.h>
 #include <llvm/Support/Format.h>
 #include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/MemoryObject.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ErrorHandling.h>

@@ -22,7 +22,7 @@
 #include <llvm/Support/MathExtras.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
-#include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Bitcode/BitcodeWriter.h>
 
 
 

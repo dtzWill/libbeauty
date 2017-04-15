@@ -43,7 +43,7 @@ dnl ------------------------------------
 dnl Flag setup
 dnl ------------------------------------
 
-AM_CPPFLAGS="-I\$(top_srcdir)/include -I/usr/include/llvm-3.9 -I/usr/include/llvm-c-3.9"
+AM_CPPFLAGS="-I\$(top_srcdir)/include -I/usr/include/llvm-4.0 -I/usr/include/llvm-c-4.0"
 
 CXXFLAGS="-O0 -Wall -g3 -std=c++11"
 DEBUG_CXXFLAGS="-g3 -Wall"

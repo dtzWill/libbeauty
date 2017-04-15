@@ -1,7 +1,7 @@
 This needs the following package installed:
 libbfd-dev
 
-This needs LLVM-3.9 installed.
+This needs LLVM-4.0 installed.
 
 To see current status do:
 In the tree root, do:
